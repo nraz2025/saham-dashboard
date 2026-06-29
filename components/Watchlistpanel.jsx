@@ -1,82 +1,66 @@
-// ============================================================================
-// FILE: components/WatchlistPanel.jsx
-// ============================================================================
-// Add this as a NEW file in your saham-dashboard repo, import + render in
-// pages/index.js (instructions at bottom).
-//
-// Shows the SAME ranked Big Money/Hot Money candidates the bot's own
-// scanner produces every cycle (~10 min, Bursa hours) — any Shariah-
-// compliant Bursa stock, not a fixed list. Fetches /api/watchlist every 20s.
-// ============================================================================
-
-import { useEffect, useState } from "react";
-import WatchlistPanel from '../components/WatchlistPanel';
+import { useEffect, useState, useCallback } from "react";
+import { fetchWatchlist } from "../lib/api";
 
 const REFRESH_MS = 20000;
 
-const ENTRY_STYLES = {
-  BIG_MONEY: { dot: "#dc2626", bg: "#fef2f2", border: "#fecaca", label: "Big Money" },
-  HOT_MONEY: { dot: "#ca8a04", bg: "#fefce8", border: "#fef08a", label: "Hot Money" },
+const ENTRY_DOT = {
+  BIG_MONEY: "bg-red-500",
+  HOT_MONEY: "bg-yellow-500",
+};
+
+const ENTRY_LABEL = {
+  BIG_MONEY: "Big Money",
+  HOT_MONEY: "Hot Money",
 };
 
 function StatusBadge({ stock }) {
   if (stock.executed_this_cycle) {
     return (
-      <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: "#1a5f3c", borderRadius: 6, padding: "2px 7px" }}>
+      <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-pl-profit/20 text-pl-profit">
         DIBELI
       </span>
     );
   }
   if (stock.ai_considered) {
     return (
-      <span style={{ fontSize: 11, fontWeight: 700, color: "#1a5f3c", background: "#dcfce7", borderRadius: 6, padding: "2px 7px" }}>
+      <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-sky-500/15 text-sky-400">
         AI REVIEW
       </span>
     );
   }
   return (
-    <span style={{ fontSize: 11, fontWeight: 600, color: "#94a3b8", background: "#f1f5f9", borderRadius: 6, padding: "2px 7px" }}>
+    <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-white/5 text-text-faint">
       WATCH
     </span>
   );
 }
 
 function StockRow({ stock }) {
-  const style = ENTRY_STYLES[stock.entry_type] || ENTRY_STYLES.HOT_MONEY;
+  const dot = ENTRY_DOT[stock.entry_type] || "bg-text-faint";
+  const label = ENTRY_LABEL[stock.entry_type] || stock.entry_type;
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "10px 14px",
-        marginBottom: 6,
-        borderRadius: 8,
-        background: style.bg,
-        border: `1px solid ${style.border}`,
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-        <span style={{ width: 9, height: 9, borderRadius: "50%", background: style.dot, flexShrink: 0 }} />
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontWeight: 600, fontSize: 14, color: "#0f172a" }}>
+    <div className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-white/[0.03] border border-white/5 mb-1.5">
+      <div className="flex items-center gap-2.5 min-w-0">
+        <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
+        <div className="min-w-0">
+          <div className="text-sm font-medium text-text truncate">
             {stock.name || stock.symbol}
-            <span style={{ color: "#94a3b8", fontWeight: 400, marginLeft: 6, fontSize: 12 }}>
+            <span className="text-text-faint font-normal ml-1.5 text-xs">
               {stock.symbol}
             </span>
           </div>
-          <div style={{ fontSize: 12, color: "#64748b" }}>
+          <div className="text-xs text-text-faint">
             CMF {stock.cmf >= 0 ? "+" : ""}{stock.cmf?.toFixed(3)} · MFI {stock.mfi?.toFixed(0)} · Vol {stock.vol_ratio}x · Score {stock.aov_score}
           </div>
         </div>
       </div>
 
-      <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12, display: "flex", alignItems: "center", gap: 8 }}>
-        <div>
-          <div style={{ fontWeight: 700, fontSize: 14, color: "#0f172a" }}>
+      <div className="flex items-center gap-2.5 shrink-0 ml-3">
+        <div className="text-right">
+          <div className="text-sm font-semibold text-text">
             RM{Number(stock.price).toFixed(3)}
           </div>
-          <div style={{ fontSize: 11, fontWeight: 600, color: style.dot }}>{style.label}</div>
+          <div className="text-[11px] font-medium text-text-faint">{label}</div>
         </div>
         <StatusBadge stock={stock} />
       </div>
@@ -86,93 +70,61 @@ function StockRow({ stock }) {
 
 export default function WatchlistPanel() {
   const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    let active = true;
-    async function fetchWatchlist() {
-      try {
-        const res = await fetch("/api/watchlist");
-        const json = await res.json();
-        if (active) setData(json);
-      } catch (e) {
-        console.error("Watchlist fetch failed:", e);
-      } finally {
-        if (active) setLoading(false);
-      }
+  const refresh = useCallback(async () => {
+    try {
+      const json = await fetchWatchlist();
+      setData(json);
+      setError(null);
+    } catch (e) {
+      setError(e.message);
     }
-    fetchWatchlist();
-    const interval = setInterval(fetchWatchlist, REFRESH_MS);
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
   }, []);
 
-  if (loading) {
-    return <div style={{ padding: 20, color: "#94a3b8", fontSize: 13 }}>Loading watchlist...</div>;
-  }
-
-  const lastScan = data?.last_scan ? new Date(data.last_scan) : null;
-  const lastScanStr = lastScan
-    ? lastScan.toLocaleTimeString("en-MY", { hour: "2-digit", minute: "2-digit", hour12: false })
-    : "—";
+  useEffect(() => {
+    refresh();
+    const id = setInterval(refresh, REFRESH_MS);
+    return () => clearInterval(id);
+  }, [refresh]);
 
   return (
-    <div style={{ background: "#fff", borderRadius: 12, padding: 18, boxShadow: "0 1px 3px rgba(0,0,0,0.08)" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+    <div className="rounded-xl bg-ink-800 border border-white/5 p-4">
+      <div className="flex items-center justify-between mb-1">
         <div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
+          <h3 className="text-sm font-semibold text-text">
             Potential Saham — Big Money Radar
-          </div>
-          <div style={{ fontSize: 12, color: "#94a3b8" }}>
-            Last scan: {lastScanStr} MYT · {data?.bursa_open ? "Bursa Open" : "Bursa Closed"} · Refresh setiap {data?.check_interval_min || 10} min
-          </div>
+          </h3>
+          <p className="text-xs text-text-faint mt-0.5">
+            {data?.bursa_open ? "Bursa open" : "Bursa closed"} · refresh tiap{" "}
+            {data?.check_interval_min || 10} min
+            {data?.last_scan && (
+              <> · last scan {new Date(data.last_scan).toLocaleTimeString("en-MY", { hour: "2-digit", minute: "2-digit", hour12: false })}</>
+            )}
+          </p>
         </div>
-        <div
-          style={{
-            fontSize: 13,
-            fontWeight: 700,
-            color: "#fff",
-            background: (data?.showing_count || 0) > 0 ? "#1a5f3c" : "#94a3b8",
-            borderRadius: 8,
-            padding: "6px 12px",
-          }}
-        >
-          {data?.showing_count || 0} saham
-        </div>
-      </div>
-      <div style={{ fontSize: 11.5, color: "#94a3b8", marginBottom: 10 }}>
-        Semua saham Bursa Shariah-compliant yang lepas filter Big Money/Hot Money (CMF+MFI) — bukan list tetap.
-        Ranked tertinggi dulu, sama macam logic scanner trading.
+        <span className={`text-xs font-semibold px-2.5 py-1 rounded-md ${(data?.showing_count || 0) > 0 ? "bg-pl-profit/20 text-pl-profit" : "bg-white/5 text-text-faint"}`}>
+          {data?.showing_count ?? "—"} saham
+        </span>
       </div>
 
-      {(!data?.stocks || data.stocks.length === 0) ? (
-        <div style={{ padding: 16, borderRadius: 8, background: "#f1f5f9", color: "#64748b", fontSize: 13 }}>
-          Tiada saham tunjuk Big Money/Hot Money signal cycle ni. Bot scan setiap{" "}
-          {data?.check_interval_min || 10} minit semasa Bursa buka.
-        </div>
-      ) : (
-        data.stocks.map((s) => <StockRow key={s.symbol} stock={s} />)
+      <p className="text-[11px] text-text-faint mb-3">
+        Semua saham Bursa Shariah-compliant yang lepas filter Big Money/Hot Money — bukan list tetap, sama logic scanner trading.
+      </p>
+
+      {error && (
+        <div className="text-xs text-pl-loss mb-2">Gagal load watchlist: {error}</div>
       )}
+
+      {!error && (!data?.stocks || data.stocks.length === 0) && (
+        <div className="rounded-lg bg-white/[0.03] p-3 text-xs text-text-faint">
+          Tiada saham tunjuk Big Money/Hot Money signal cycle ni.
+        </div>
+      )}
+
+      {data?.stocks?.map((s) => (
+        <StockRow key={s.symbol} stock={s} />
+      ))}
     </div>
   );
 }
-
-// ============================================================================
-// HOW TO ADD TO YOUR DASHBOARD
-// ============================================================================
-// 1. Save as: components/WatchlistPanel.jsx
-// 2. In pages/index.js:
-//      import WatchlistPanel from '../components/WatchlistPanel';
-//      ... <PositionsPanel positions={positions} /> <WatchlistPanel /> ...
-// 3. If your /api/* calls go to FastAPI directly (not proxied), use the
-//    same base URL your /api/positions call already uses.
-//
-// BADGE MEANINGS:
-//   WATCH      = ada Big Money/Hot Money signal, tapi bukan dalam top 10
-//                yang dihantar ke AI (rank lebih rendah)
-//   AI REVIEW  = masuk top 10, AI dah review, tapi tak ditrade cycle ni
-//                (sebab confidence rendah / slot penuh / cooldown / dsb)
-//   DIBELI     = betul-betul dibeli/dijual cycle ni
-// ============================================================================
