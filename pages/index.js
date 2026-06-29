@@ -106,6 +106,15 @@ export default function Home() {
           <TradesPanel trades={trades} />
         </section>
 
+
+        {/* TAMBAH NI ↓ */}
+        <section className="mb-6">
+          <WatchlistPanel />
+        </section>
+        {/* TAMBAH NI ↑ */}
+
+
+
         <footer className="mt-8 pb-6 text-xs text-text-faint flex flex-wrap gap-4">
           <span><span className="text-pl-profit">●</span> profit</span>
           <span><span className="text-pl-loss">●</span> loss</span>
