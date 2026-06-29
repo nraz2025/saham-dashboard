@@ -5,7 +5,7 @@ import StatTile from "../components/StatTile";
 import PositionsPanel from "../components/PositionsPanel";
 import TradesPanel from "../components/TradesPanel";
 import PnLChart from "../components/PnLChart";
-import WatchlistPanel from "../components/WatchlistPanel";
+import WatchlistPanel from "../components/WatchlistPanel";   {/* TAMBAH NI ↑ */}
 import { fetchStatus, fetchPositions, fetchTrades, fetchSummary, fetchConfig, updateConfig } from "../lib/api";
 import { fmtPlain, fmtPct } from "../lib/format";
 
