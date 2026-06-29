@@ -10,6 +10,7 @@
 // ============================================================================
 
 import { useEffect, useState } from "react";
+import WatchlistPanel from '../components/WatchlistPanel';
 
 const REFRESH_MS = 20000;
 
