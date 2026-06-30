@@ -19,25 +19,26 @@ function StatusBadge({ stock }) {
   if (stock.ai_considered) {
     return <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-sky-500/15 text-sky-400">AI REVIEW</span>;
   }
-  return <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-white/5 text-text-faint">WATCH</span>;
+  return <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-white/10 text-white/70">WATCH</span>;
 }
 
 function StockRow({ stock }) {
-  const dot = ENTRY_DOT[stock.entry_type] || "bg-text-faint";
+  const dot = ENTRY_DOT[stock.entry_type] || "bg-white/40";
   const entryLabel = ENTRY_LABEL[stock.entry_type] || stock.entry_type;
   const act = ACTION_STYLE[stock.action] || ACTION_STYLE.TUNGGU;
 
   return (
-    <div className={`rounded-lg bg-white/[0.03] border ${act.border} mb-1.5 overflow-hidden`}>
+    <div className={`rounded-lg bg-white/[0.04] border ${act.border} mb-1.5 overflow-hidden`}>
       <div className="flex items-center justify-between px-3 py-2.5">
         <div className="flex items-center gap-2.5 min-w-0">
           <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
           <div className="min-w-0">
             <div className="text-sm font-medium text-text truncate">
               {stock.name || stock.symbol}
-              <span className="text-text-faint font-normal ml-1.5 text-xs">{stock.symbol}</span>
+              <span className="text-white/50 font-normal ml-1.5 text-xs">{stock.symbol}</span>
             </div>
-            <div className="text-xs text-text-faint">
+            {/* ── Diterangkan: tukar dari text-text-faint (gelap) ke text-white/75 (lebih nampak) ── */}
+            <div className="text-xs text-white/75">
               CMF {stock.cmf >= 0 ? "+" : ""}{stock.cmf?.toFixed(3)} · MFI {stock.mfi?.toFixed(0)} · Vol {stock.vol_ratio}x · {entryLabel}
             </div>
           </div>
@@ -46,7 +47,7 @@ function StockRow({ stock }) {
         <div className="flex items-center gap-2.5 shrink-0 ml-3">
           <div className="text-right">
             <div className="text-sm font-semibold text-text">RM{Number(stock.price).toFixed(3)}</div>
-            <div className="text-[11px] font-medium text-text-faint">Score {stock.aov_score}</div>
+            <div className="text-[11px] font-medium text-white/60">Score {stock.aov_score}</div>
           </div>
           <StatusBadge stock={stock} />
         </div>
@@ -55,7 +56,7 @@ function StockRow({ stock }) {
       {/* ── Real-time action verdict — recalculated every cycle dari harga semasa ── */}
       <div className={`px-3 py-2 flex items-start gap-2 ${act.badge} border-t ${act.border}`}>
         <span className="text-xs font-bold whitespace-nowrap mt-0.5">{act.label}</span>
-        <span className="text-xs opacity-80">{stock.action_reason}</span>
+        <span className="text-xs opacity-90">{stock.action_reason}</span>
       </div>
     </div>
   );
@@ -86,19 +87,19 @@ export default function WatchlistPanel() {
       <div className="flex items-center justify-between mb-1">
         <div>
           <h3 className="text-sm font-semibold text-text">Potential Saham — Big Money Radar</h3>
-          <p className="text-xs text-text-faint mt-0.5">
+          <p className="text-xs text-white/60 mt-0.5">
             {data?.bursa_open ? "Bursa open" : "Bursa closed"} · refresh tiap {data?.check_interval_min || 10} min
             {data?.last_scan && (
               <> · last scan {new Date(data.last_scan).toLocaleTimeString("en-MY", { hour: "2-digit", minute: "2-digit", hour12: false })}</>
             )}
           </p>
         </div>
-        <span className={`text-xs font-semibold px-2.5 py-1 rounded-md ${(data?.boleh_beli_count || 0) > 0 ? "bg-pl-profit/20 text-pl-profit" : "bg-white/5 text-text-faint"}`}>
+        <span className={`text-xs font-semibold px-2.5 py-1 rounded-md ${(data?.boleh_beli_count || 0) > 0 ? "bg-pl-profit/20 text-pl-profit" : "bg-white/10 text-white/70"}`}>
           {data?.boleh_beli_count ?? 0} boleh beli
         </span>
       </div>
 
-      <p className="text-[11px] text-text-faint mb-3">
+      <p className="text-[11px] text-white/50 mb-3">
         Verdict "Boleh Beli / Tunggu / Jangan Beli" dikira SEMULA setiap cycle dari harga semasa —
         kalau pagi tadi elok tapi harga dah lari dari support, verdict auto turun ke Tunggu/Jangan Beli.
       </p>
@@ -106,7 +107,7 @@ export default function WatchlistPanel() {
       {error && <div className="text-xs text-pl-loss mb-2">Gagal load watchlist: {error}</div>}
 
       {!error && (!data?.stocks || data.stocks.length === 0) && (
-        <div className="rounded-lg bg-white/[0.03] p-3 text-xs text-text-faint">
+        <div className="rounded-lg bg-white/[0.04] p-3 text-xs text-white/60">
           Tiada saham tunjuk Big Money/Hot Money signal cycle ni.
         </div>
       )}
