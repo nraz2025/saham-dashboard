@@ -89,9 +89,12 @@ export default function WatchlistPanel() {
           <h3 className="text-sm font-semibold text-text">Potential Saham — Big Money Radar</h3>
           <p className="text-xs text-white/60 mt-0.5">
             {data?.bursa_open ? "Bursa open" : "Bursa closed"} · refresh tiap {data?.check_interval_min || 10} min
-            {data?.last_scan && (
-              <> · last scan {new Date(data.last_scan).toLocaleTimeString("en-MY", { hour: "2-digit", minute: "2-digit", hour12: false })}</>
-            )}
+            {data?.last_scan && (() => {
+              const dt = new Date(data.last_scan);
+              const dateStr = dt.toLocaleDateString("en-MY", { day: "numeric", month: "short", year: "numeric" });
+              const timeStr = dt.toLocaleTimeString("en-MY", { hour: "2-digit", minute: "2-digit", hour12: false });
+              return <> · last scan {dateStr} {timeStr}</>;
+            })()}
           </p>
         </div>
         <span className={`text-xs font-semibold px-2.5 py-1 rounded-md ${(data?.boleh_beli_count || 0) > 0 ? "bg-pl-profit/20 text-pl-profit" : "bg-white/10 text-white/70"}`}>
