@@ -90,9 +90,13 @@ export default function WatchlistPanel() {
           <p className="text-xs text-white/60 mt-0.5">
             {data?.bursa_open ? "Bursa open" : "Bursa closed"} · refresh tiap {data?.check_interval_min || 10} min
             {data?.last_scan && (() => {
-              const dt = new Date(data.last_scan);
-              const dateStr = dt.toLocaleDateString("en-MY", { day: "numeric", month: "short", year: "numeric" });
-              const timeStr = dt.toLocaleTimeString("en-MY", { hour: "2-digit", minute: "2-digit", hour12: false });
+              // Parse ISO string explicitly as +08:00 (MYT) tanpa rely pada browser timezone
+              const match = data.last_scan.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+              if (!match) return null;
+              
+              const [, year, month, day, hour, minute] = match;
+              const dateStr = `${day} ${new Date(year, month - 1, day).toLocaleDateString("en-MY", { month: "short" })} ${year}`;
+              const timeStr = `${hour}:${minute}`;
               return <> · last scan {dateStr} {timeStr}</>;
             })()}
           </p>
