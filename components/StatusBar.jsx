@@ -5,6 +5,11 @@ export default function StatusBar({ status, error, config, onToggle, toggling })
   const isLive = status?.last_update && (Date.now() - new Date(status.last_update).getTime() < 3 * 60 * 1000);
   const dotColor = error ? "bg-pl-loss" : isLive ? "bg-aov-green" : "bg-aov-amber";
 
+  // Kira sama ada harga stale (>15 minit tak update) — berlaku bila market tutup
+  const priceUpdatedAt = status?.price_last_updated ? new Date(status.price_last_updated) : null;
+  const priceAgeMs = priceUpdatedAt ? Date.now() - priceUpdatedAt.getTime() : null;
+  const isPriceStale = priceAgeMs !== null && priceAgeMs > 15 * 60 * 1000;
+
   return (
     <header className="flex flex-wrap items-center justify-between gap-3 border-b border-ink-600 pb-5 mb-6">
       <div className="flex items-center gap-3">
@@ -35,6 +40,17 @@ export default function StatusBar({ status, error, config, onToggle, toggling })
         </div>
         <span>Bursa {status?.bursa_open ? <b className="text-aov-green">OPEN</b> : "closed"}</span>
         <span>US {status?.us_open ? <b className="text-aov-green">OPEN</b> : "closed"}</span>
+
+        {/* Harga position last dikemas — tunjuk warning kalau stale */}
+        {priceUpdatedAt && (
+          <span
+            title={`Harga dikemas: ${priceUpdatedAt.toLocaleTimeString("en-MY", { hour: "2-digit", minute: "2-digit" })}`}
+            className={isPriceStale ? "text-aov-amber" : "text-text-muted"}
+          >
+            {isPriceStale ? "⚠ " : ""}harga {timeAgo(status.price_last_updated)}
+          </span>
+        )}
+
         <span>
           {error ? (
             <span className="text-pl-loss">offline — {error}</span>
