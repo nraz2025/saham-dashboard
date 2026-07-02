@@ -12,6 +12,14 @@ const ACTION_STYLE = {
 const ENTRY_DOT = { BIG_MONEY: "bg-red-500", HOT_MONEY: "bg-yellow-500" };
 const ENTRY_LABEL = { BIG_MONEY: "Big Money", HOT_MONEY: "Hot Money" };
 
+// Score tier classification
+function getScoreTier(score) {
+  if (score >= 90) return { tier: "STRONG", color: "bg-emerald-500/20 text-emerald-400", label: "🟢 Strong" };
+  if (score >= 70) return { tier: "MODERATE", color: "bg-yellow-500/20 text-yellow-400", label: "🟡 Moderate" };
+  if (score >= 50) return { tier: "WEAK", color: "bg-orange-500/20 text-orange-400", label: "🟠 Weak" };
+  return { tier: "SKIP", color: "bg-red-500/20 text-red-400", label: "🔴 Skip" };
+}
+
 function StatusBadge({ stock }) {
   if (stock.executed_this_cycle) {
     return <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-pl-profit/20 text-pl-profit">DIBELI</span>;
@@ -26,6 +34,7 @@ function StockRow({ stock }) {
   const dot = ENTRY_DOT[stock.entry_type] || "bg-white/40";
   const entryLabel = ENTRY_LABEL[stock.entry_type] || stock.entry_type;
   const act = ACTION_STYLE[stock.action] || ACTION_STYLE.TUNGGU;
+  const tierInfo = getScoreTier(stock.aov_score);
 
   return (
     <div className={`rounded-lg bg-white/[0.04] border ${act.border} mb-1.5 overflow-hidden`}>
@@ -47,7 +56,12 @@ function StockRow({ stock }) {
         <div className="flex items-center gap-2.5 shrink-0 ml-3">
           <div className="text-right">
             <div className="text-sm font-semibold text-text">RM{Number(stock.price).toFixed(3)}</div>
-            <div className="text-[11px] font-medium text-white/60">Score {stock.aov_score}</div>
+            <div className="flex items-center gap-1.5 text-[11px] font-medium text-white/60">
+              <span>Score {stock.aov_score}</span>
+              <span className={`px-1.5 py-0.5 rounded text-[9px] font-semibold ${tierInfo.color}`}>
+                {tierInfo.label}
+              </span>
+            </div>
           </div>
           <StatusBadge stock={stock} />
         </div>
@@ -90,14 +104,16 @@ export default function WatchlistPanel() {
           <p className="text-xs text-white/60 mt-0.5">
             {data?.bursa_open ? "Bursa open" : "Bursa closed"} · refresh tiap {data?.check_interval_min || 10} min
             {data?.last_scan && (() => {
-              // Parse ISO string explicitly as +08:00 (MYT) tanpa rely pada browser timezone
-              const match = data.last_scan.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+              // Parse ISO string explicitly: "2026-07-01T16:52:04.015455+08:00"
+              const match = data.last_scan.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
               if (!match) return null;
               
               const [, year, month, day, hour, minute] = match;
-              const dateStr = `${day} ${new Date(year, month - 1, day).toLocaleDateString("en-MY", { month: "short" })} ${year}`;
-              const timeStr = `${hour}:${minute}`;
-              return <> · last scan {dateStr} {timeStr}</>;
+              const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+              const monthName = monthNames[parseInt(month) - 1];
+              const dayNum = parseInt(day);
+              
+              return <> · last scan {dayNum} {monthName} {year} {hour}:{minute}</>;
             })()}
           </p>
         </div>
@@ -109,6 +125,7 @@ export default function WatchlistPanel() {
       <p className="text-[11px] text-white/50 mb-3">
         Verdict "Boleh Beli / Tunggu / Jangan Beli" dikira SEMULA setiap cycle dari harga semasa —
         kalau pagi tadi elok tapi harga dah lari dari support, verdict auto turun ke Tunggu/Jangan Beli.
+        Score tier: 🟢 Strong (90+) | 🟡 Moderate (70-89) | 🟠 Weak (50-69) | 🔴 Skip (&lt;50)
       </p>
 
       {error && <div className="text-xs text-pl-loss mb-2">Gagal load watchlist: {error}</div>}
