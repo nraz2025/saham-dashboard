@@ -62,4 +62,3 @@ export default function StatusBar({ status, error, config, onToggle, toggling })
     </header>
   );
 }
-
